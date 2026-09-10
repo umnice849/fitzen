@@ -5,6 +5,6 @@ dbs:
         bucket: fitzen-backup
         path: fitzen-db
         endpoint: https://d8751106191643f4bb9e3a7cb6275afc.r2.cloudflarestorage.com
-        access-key-id:≈ "100ff6fc56593e1c151e1172472624cb"
-        secret-access-key: "d638c0fd2dfec841b1c2fd3d3a73be2a5e4d6912e8db2d1ed736380e750b591f"
+        access-key-id: ${LITESTREAM_ACCESS_KEY_ID}
+        secret-access-key: ${LITESTREAM_SECRET_ACCESS_KEY}
         region: auto
