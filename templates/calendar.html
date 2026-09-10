@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% set active = 'calendar' %}
+{% block content %}
+<div class="cal-header">
+    <a class="btn secondary" href="{{ url_for('calendar_view', year=prev_year, month=prev_month) }}">&larr; Prev</a>
+    <h2>{{ month_name }} {{ year }}</h2>
+    <a class="btn secondary" href="{{ url_for('calendar_view', year=next_year, month=next_month) }}">Next &rarr;</a>
+</div>
+
+<table class="cal-table">
+    <tr>
+        <th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th><th>Sun</th>
+    </tr>
+    {% for week in weeks %}
+    <tr>
+        {% for day in week %}
+        <td class="cal-cell {{ 'empty' if day == 0 }}">
+            {% if day != 0 %}
+                <div class="cal-day-num">{{ day }}</div>
+                {% for fight in fights_by_day.get(day, []) %}
+                <div class="cal-fight" title="{{ fight['gym_name'] }}">
+                    {{ fight['fighter1_name'] }} vs {{ fight['fighter2_name'] }}<br>
+                    <small>{{ fight['gym_name'] }}</small>
+                </div>
+                {% endfor %}
+            {% endif %}
+        </td>
+        {% endfor %}
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

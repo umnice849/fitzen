@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card profile-header">
+    <img class="profile-photo" src="{{ fighter['photo'] or 'https://placehold.co/140x140?text=%20' }}" alt="">
+    <div>
+        <h2 style="margin-bottom:4px;">{{ fighter['name'] }}</h2>
+        <p style="margin:2px 0;">Age {{ fighter['age'] }} &middot; {{ fighter['weight'] }}kg &middot; {{ fighter['weight_class'] }}</p>
+        <p style="margin:2px 0;">Skill level {{ fighter['skill_level'] }} &middot; Record: {{ fighter['wins'] }}-{{ fighter['losses'] }}</p>
+        <p style="margin:2px 0;">Contact: {{ fighter['contact'] }}</p>
+    </div>
+</div>
+
+<h3>Fight Record</h3>
+<table>
+    <tr><th>Date</th><th>Opponent</th><th>Venue</th></tr>
+    {% for m in history %}
+    <tr>
+        <td>{{ m['fight_date'] }}</td>
+        <td>
+            {% if m['fighter1_id'] == fighter['id'] %}{{ m['fighter2_name'] }}{% else %}{{ m['fighter1_name'] }}{% endif %}
+        </td>
+        <td>{{ m['gym_name'] }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="3">No confirmed fights yet.</td></tr>
+    {% endfor %}
+</table>
+{% endblock %}

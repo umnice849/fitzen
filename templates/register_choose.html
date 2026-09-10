@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Register as...</h2>
+<div class="role-cards">
+    <a class="role-card" href="{{ url_for('register_fighter') }}">Fighter</a>
+    <a class="role-card" href="{{ url_for('home') }}">Viewer<br><small style="font-weight:400;">(no account needed)</small></a>
+    <a class="role-card" href="{{ url_for('register_gym') }}">Gym</a>
+</div>
+{% endblock %}

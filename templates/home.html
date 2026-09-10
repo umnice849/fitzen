@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+    {% if role == 'fighter' %}
+        <h2>Welcome back, {{ fighter['name'] }}</h2>
+        <p>{{ fighter['weight_class'] }} &middot; Skill level {{ fighter['skill_level'] }} &middot; {{ fighter['wins'] }}-{{ fighter['losses'] }} record</p>
+        <a class="btn" href="{{ url_for('find_opponent_route') }}">Find an Opponent</a>
+    {% elif role == 'gym' %}
+        <h2>Welcome back, {{ gym['name'] }}</h2>
+        <p>{{ gym['location'] }}</p>
+        <a class="btn" href="{{ url_for('gym_fights') }}">View Proposed Fights</a>
+    {% else %}
+        <h2>Welcome to FITZEN</h2>
+        <p>Browse registered fighters, gyms, and upcoming fights below. Register as a Fighter or Gym to create profiles and request matches.</p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% set active = 'fights' %}
+{% block content %}
+<h2>Proposed Fights at Your Gym</h2>
+{% for m in fights %}
+<div class="card">
+    <p><strong>{{ m['fighter1_name'] }}</strong> vs <strong>{{ m['fighter2_name'] }}</strong> &middot; {{ m['fight_date'] }} &middot; {{ m['weight_class'] }}
+    <span class="badge pending">pending</span></p>
+    <form class="inline" method="POST" action="{{ url_for('gym_fight_decision', match_id=m['id'], decision='accepted') }}">
+        <button class="btn" type="submit">Accept</button>
+    </form>
+    <form class="inline" method="POST" action="{{ url_for('gym_fight_decision', match_id=m['id'], decision='declined') }}">
+        <button class="btn decline" type="submit">Decline</button>
+    </form>
+</div>
+{% else %}
+<p>No pending fight requests right now.</p>
+{% endfor %}
+{% endblock %}

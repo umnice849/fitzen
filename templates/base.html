@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>FITZEN</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header>
+    <a class="brand" href="{{ url_for('home') }}"><h1>FITZEN</h1></a>
+    <div>
+        {% if role %}
+            <a href="{{ url_for('logout') }}">Log out</a>
+        {% else %}
+            <a href="{{ url_for('login') }}">Log in</a> &nbsp;|&nbsp;
+            <a href="{{ url_for('register_choose') }}">Register</a>
+        {% endif %}
+    </div>
+</header>
+
+<nav>
+    {% if role == 'fighter' %}
+        <a href="{{ url_for('find_opponent_route') }}" class="{{ 'active' if active == 'find' }}">Find Opponent</a>
+        <a href="{{ url_for('fighters_list') }}" class="{{ 'active' if active == 'fighters' }}">Fighters</a>
+        <a href="{{ url_for('gyms_list') }}" class="{{ 'active' if active == 'gyms' }}">Gyms</a>
+        <a href="{{ url_for('calendar_view') }}" class="{{ 'active' if active == 'calendar' }}">Calendar</a>
+    {% elif role == 'gym' %}
+        <a href="{{ url_for('gym_fights') }}" class="{{ 'active' if active == 'fights' }}">Fights</a>
+        <a href="{{ url_for('gym_fighters') }}" class="{{ 'active' if active == 'gymfighters' }}">Fighters</a>
+        <a href="{{ url_for('gyms_list') }}" class="{{ 'active' if active == 'gyms' }}">Gyms</a>
+        <a href="{{ url_for('calendar_view') }}" class="{{ 'active' if active == 'calendar' }}">Calendar</a>
+    {% else %}
+        <a href="{{ url_for('fighters_list') }}" class="{{ 'active' if active == 'fighters' }}">Fighters</a>
+        <a href="{{ url_for('gyms_list') }}" class="{{ 'active' if active == 'gyms' }}">Gyms</a>
+        <a href="{{ url_for('calendar_view') }}" class="{{ 'active' if active == 'calendar' }}">Calendar</a>
+    {% endif %}
+</nav>
+
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+        {% for msg in messages %}<div class="flash">{{ msg }}</div>{% endfor %}
+    {% endif %}
+{% endwith %}
+
+{% block content %}{% endblock %}
+
+</body>
+</html>

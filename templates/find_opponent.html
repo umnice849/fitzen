@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% set active = 'find' %}
+{% block content %}
+<h2>Find an Opponent</h2>
+
+<div class="card">
+<form method="POST">
+    <div class="field"><label>Fight Date</label><input type="date" name="fight_date" value="{{ fight_date or '' }}" required></div>
+    <div class="field"><label>Preferred Location <small>(note only — doesn't affect matching)</small></label>
+        <input name="preferred_location" value="{{ preferred_location or '' }}"></div>
+    <button class="btn" type="submit">Find Opponent</button>
+</form>
+</div>
+
+{% if result %}
+<div class="card">
+{% if result.result == 'none' %}
+    <p><strong>No opponents available.</strong> Nobody was found in {{ fighter['weight_class'] }} or nearby weight classes for this date. Try a different date.</p>
+
+{% elif result.result in ('single', 'match', 'fallback') %}
+    {% set opp = result.match %}
+    <h3>Opponent Found{% if result.result == 'fallback' %} (nearest weight class: {{ result['class'] }}){% endif %}</h3>
+    <p><strong>{{ opp['name'] }}</strong> &middot; Age {{ opp['age'] }} &middot; {{ opp['weight_class'] }} &middot; Skill {{ opp['skill_level'] }} &middot; {{ opp['wins'] }}-{{ opp['losses'] }} record</p>
+    <p>Compatibility score: {{ "%.3f"|format(result.score) }} (lower = closer match)</p>
+
+    <form method="POST" action="{{ url_for('propose_match') }}">
+        <input type="hidden" name="opponent_id" value="{{ opp['id'] }}">
+        <input type="hidden" name="fight_date" value="{{ fight_date }}">
+        <input type="hidden" name="preferred_location" value="{{ preferred_location or '' }}">
+        <input type="hidden" name="score" value="{{ result.score }}">
+        <div class="field">
+            <label>Choose Gym / Venue</label>
+            <select name="gym_id" required>
+                {% for g in gyms %}<option value="{{ g['id'] }}">{{ g['name'] }} — {{ g['location'] }}</option>{% endfor %}
+            </select>
+        </div>
+        <button class="btn" type="submit">Propose This Match</button>
+    </form>
+
+{% elif result.result == 'tie' %}
+    <h3>Two Fighters Tied — Choose One</h3>
+    {% for entry in result.matches %}
+    {% set opp = entry.fighter %}
+    <div class="card">
+        <p><strong>{{ opp['name'] }}</strong> &middot; Age {{ opp['age'] }} &middot; Skill {{ opp['skill_level'] }} &middot; {{ opp['wins'] }}-{{ opp['losses'] }} record &middot; score {{ "%.3f"|format(entry.score) }}</p>
+        <form method="POST" action="{{ url_for('propose_match') }}">
+            <input type="hidden" name="opponent_id" value="{{ opp['id'] }}">
+            <input type="hidden" name="fight_date" value="{{ fight_date }}">
+            <input type="hidden" name="preferred_location" value="{{ preferred_location or '' }}">
+            <input type="hidden" name="score" value="{{ entry.score }}">
+            <div class="field">
+                <label>Choose Gym / Venue</label>
+                <select name="gym_id" required>
+                    {% for g in gyms %}<option value="{{ g['id'] }}">{{ g['name'] }} — {{ g['location'] }}</option>{% endfor %}
+                </select>
+            </div>
+            <button class="btn" type="submit">Propose Match with {{ opp['name'] }}</button>
+        </form>
+    </div>
+    {% endfor %}
+{% endif %}
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% set active = 'gymfighters' %}
+{% block content %}
+<h2>Fighters at Your Gym</h2>
+<table>
+    <tr><th>Name</th><th>Age</th><th>Weight Class</th><th>Skill</th><th>Record</th></tr>
+    {% for f in fighters %}
+    <tr>
+        <td>{{ f['name'] }}</td>
+        <td>{{ f['age'] }}</td>
+        <td>{{ f['weight_class'] }}</td>
+        <td>{{ f['skill_level'] }}</td>
+        <td>{{ f['wins'] }}-{{ f['losses'] }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5">No fighters have joined your gym yet.</td></tr>
+    {% endfor %}
+</table>
+{% endblock %}

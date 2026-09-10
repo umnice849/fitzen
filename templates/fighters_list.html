@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% set active = 'fighters' %}
+{% block content %}
+<h2>Fighters</h2>
+<form method="GET" class="card filters">
+    <input name="q" placeholder="Search by name" value="{{ q }}">
+    <select name="weight_class">
+        <option value="">All weight classes</option>
+        {% for wc in weight_classes %}
+        <option value="{{ wc }}" {{ 'selected' if wc == weight_class }}>{{ wc }}</option>
+        {% endfor %}
+    </select>
+    <button class="btn" type="submit">Search</button>
+</form>
+<table>
+    <tr><th>Photo</th><th>Name</th><th>Age</th><th>Weight Class</th><th>Skill</th><th>Record</th></tr>
+    {% for f in fighters %}
+    <tr>
+        <td><img class="fighter-photo" src="{{ f['photo'] or 'https://placehold.co/80x80?text=%20' }}" alt=""></td>
+        <td><a href="{{ url_for('fighter_profile', fighter_id=f['id']) }}">{{ f['name'] }}</a></td>
+        <td>{{ f['age'] }}</td>
+        <td>{{ f['weight_class'] }}</td>
+        <td>{{ f['skill_level'] }}</td>
+        <td>{{ f['wins'] }}-{{ f['losses'] }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="6">No fighters match that search.</td></tr>
+    {% endfor %}
+</table>
+{% endblock %}

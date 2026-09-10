@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Gym Registration</h2>
+<div class="card">
+<form method="POST">
+    <div class="field"><label>Username</label><input name="username" required></div>
+    <div class="field"><label>Password</label><input type="password" name="password" required></div>
+    <div class="field"><label>Gym Name</label><input name="name" required></div>
+    <div class="field"><label>Location</label><input name="location" required></div>
+    <div class="field"><label>Ring Size</label><input name="ring_size" placeholder="e.g. 6m x 6m"></div>
+    <div class="field"><label>Photo URL (optional)</label><input name="photo" placeholder="link to a gym/ring photo"></div>
+    <div class="field"><label>Contact Info</label><input name="contact" required></div>
+    <button class="btn" type="submit">Create Account</button>
+</form>
+</div>
+{% endblock %}
