@@ -12,15 +12,15 @@ conn = get_db()
 gyms = [
     # username, password, name, location, ring_size, photo
     ("gym_ktm_fc", "gymPass1!", "Kathmandu Fight Club", "Kathmandu, Bagmati", "6m x 6m",
-     "https://picsum.photos/seed/gym1/300/220", "01-4441122"),
+     "https://picsum.photos/seed/gym1/300/220", "9801444112"),
     ("gym_thunder", "gymPass2!", "Thunder Ring Gym", "Pokhara, Gandaki", "7m x 7m",
-     "https://picsum.photos/seed/gym2/300/220", "061-556677"),
+     "https://picsum.photos/seed/gym2/300/220", "9806155667"),
     ("gym_ironfist", "gymPass3!", "Iron Fist Academy", "Lalitpur, Bagmati", "6m x 6m",
-     "https://picsum.photos/seed/gym3/300/220", "01-5512233"),
+     "https://picsum.photos/seed/gym3/300/220", "9801551223"),
     ("gym_redcorner", "gymPass4!", "Red Corner Kickboxing", "Biratnagar, Koshi", "5.5m x 5.5m",
-     "https://picsum.photos/seed/gym4/300/220", "021-778899"),
+     "https://picsum.photos/seed/gym4/300/220", "9802177889"),
     ("gym_apex", "gymPass5!", "Apex Combat Center", "Bharatpur, Bagmati", "7m x 7m",
-     "https://picsum.photos/seed/gym5/300/220", "056-334455"),
+     "https://picsum.photos/seed/gym5/300/220", "9805633445"),
 ]
 
 gym_ids = {}

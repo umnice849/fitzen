@@ -5,7 +5,10 @@
 
 <div class="card">
 <form method="POST">
-    <div class="field"><label>Fight Date</label><input type="date" name="fight_date" value="{{ fight_date or '' }}" required></div>
+    <div class="field"><label>Fight Date</label>
+        <input type="date" name="fight_date" value="{{ fight_date or '' }}"
+               min="{{ today }}" max="{{ max_date }}" required>
+        <small>Must be today or later, and within one year.</small></div>
     <div class="field"><label>Preferred Location <small>(note only — doesn't affect matching)</small></label>
         <input name="preferred_location" value="{{ preferred_location or '' }}"></div>
     <button class="btn" type="submit">Find Opponent</button>

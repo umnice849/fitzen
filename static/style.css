@@ -102,3 +102,67 @@ form.inline { display: inline; }
 .profile-photo { width: 140px; height: 140px; border-radius: 12px; object-fit: cover; background: #ddd; }
 .profile-header { display: flex; gap: 20px; align-items: center; }
 .filters { display: flex; gap: 10px; align-items: center; }
+
+/* ---------- Landing / role-selection page ---------- */
+body.landing {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 24px;
+    margin: 0;
+}
+
+.landing-wrap { width: 100%; max-width: 920px; text-align: center; }
+
+.landing-brand {
+    font-size: 64px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    margin: 0 0 6px;
+}
+
+.landing-sub {
+    font-size: 17px;
+    color: #666;
+    margin: 0 0 40px;
+}
+
+.role-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}
+
+.role-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 36px 20px;
+    background: #fff;
+    border: 3px solid #1a1a1a;
+    border-radius: 18px;
+    text-decoration: none;
+    color: #1a1a1a;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.role-tile:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+}
+
+.role-icon { width: 76px; height: 76px; color: #1a1a1a; }
+.role-label { font-size: 22px; font-weight: 700; }
+.role-hint { font-size: 13px; color: #777; line-height: 1.35; }
+
+@media (max-width: 720px) {
+    .role-grid { grid-template-columns: 1fr; }
+    .landing-brand { font-size: 46px; }
+    .role-tile { padding: 26px 18px; }
+}
+
+/* ---------- Form validation helper text ---------- */
+.field small { display: block; margin-top: 4px; color: #777; font-size: 12px; }

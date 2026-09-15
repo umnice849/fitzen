@@ -3,14 +3,25 @@
 <h2>Gym Registration</h2>
 <div class="card">
 <form method="POST">
-    <div class="field"><label>Username</label><input name="username" required></div>
-    <div class="field"><label>Password</label><input type="password" name="password" required></div>
-    <div class="field"><label>Gym Name</label><input name="name" required></div>
-    <div class="field"><label>Location</label><input name="location" required></div>
-    <div class="field"><label>Ring Size</label><input name="ring_size" placeholder="e.g. 6m x 6m"></div>
-    <div class="field"><label>Photo URL (optional)</label><input name="photo" placeholder="link to a gym/ring photo"></div>
-    <div class="field"><label>Contact Info</label><input name="contact" required></div>
+    <div class="field"><label>Username</label>
+        <input name="username" value="{{ form.get('username', '') }}" required>
+        <small>3–20 characters. Letters, numbers and underscores only.</small></div>
+    <div class="field"><label>Password</label>
+        <input type="password" name="password" required>
+        <small>At least 8 characters, including a letter and a number.</small></div>
+    <div class="field"><label>Gym Name</label>
+        <input name="name" value="{{ form.get('name', '') }}" required></div>
+    <div class="field"><label>Location</label>
+        <input name="location" value="{{ form.get('location', '') }}" required></div>
+    <div class="field"><label>Ring Size</label>
+        <input name="ring_size" value="{{ form.get('ring_size', '') }}" placeholder="e.g. 6m x 6m"></div>
+    <div class="field"><label>Photo URL (optional)</label>
+        <input name="photo" value="{{ form.get('photo', '') }}" placeholder="link to a gym/ring photo"></div>
+    <div class="field"><label>Contact Number</label>
+        <input name="contact" value="{{ form.get('contact', '') }}" required>
+        <small>Exactly 10 digits. Spaces and dashes are ignored.</small></div>
     <button class="btn" type="submit">Create Account</button>
 </form>
+<p style="margin-top:14px;">Already registered? <a href="{{ url_for('login', role='gym') }}">Log in</a>.</p>
 </div>
 {% endblock %}

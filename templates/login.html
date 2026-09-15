@@ -1,12 +1,23 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Log In</h2>
+<h2>{% if role == 'fighter' %}Fighter Log In{% elif role == 'gym' %}Gym Log In{% else %}Log In{% endif %}</h2>
 <div class="card">
 <form method="POST">
-    <div class="field"><label>Username</label><input name="username" required></div>
+    <input type="hidden" name="role" value="{{ role }}">
+    <div class="field"><label>Username</label><input name="username" required autofocus></div>
     <div class="field"><label>Password</label><input type="password" name="password" required></div>
     <button class="btn" type="submit">Log In</button>
 </form>
-<p>No account? <a href="{{ url_for('register_choose') }}">Register here</a>.</p>
+<p style="margin-top:16px;">
+    Don't have an account?
+    {% if role == 'gym' %}
+        <a href="{{ url_for('register_gym') }}">Register as a Gym</a>.
+    {% elif role == 'fighter' %}
+        <a href="{{ url_for('register_fighter') }}">Register as a Fighter</a>.
+    {% else %}
+        <a href="{{ url_for('register_choose') }}">Register here</a>.
+    {% endif %}
+</p>
+<p><a href="{{ url_for('index') }}">&larr; Back to role selection</a></p>
 </div>
 {% endblock %}

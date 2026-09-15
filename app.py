@@ -1,13 +1,26 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import date
+from datetime import date, timedelta
 import sqlite3
+import os
 
 from db import get_db
 from matching import find_opponent, WEIGHT_CLASSES, InvalidFighterDataError
+from validation import (
+    ValidationError, validate_age, validate_weight, validate_height,
+    validate_skill_level, validate_username, validate_password, validate_contact,
+    validate_required_text, validate_weight_class, validate_fight_date,
+    MAX_FIGHT_DAYS_AHEAD,
+)
 
 app = Flask(__name__)
-app.secret_key = "dev-secret-key-change-this-before-real-deployment"
+# In production this is supplied via the SECRET_KEY environment variable; the
+# fallback only exists so the app still runs locally during development.
+app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key-change-this-before-real-deployment")
+
+# Sessions expire after 7 days rather than lasting indefinitely, so a login left
+# open on a shared gym computer does not stay valid forever.
+app.permanent_session_lifetime = timedelta(days=7)
 
 
 # ---------- helpers ----------
@@ -44,7 +57,25 @@ def login_required(role=None):
 
 @app.route("/")
 def index():
-    return redirect(url_for("home"))
+    """Landing page: pick a role (Fighter / Viewer / Gym).
+
+    A logged-in user skips this entirely and goes straight to their dashboard,
+    so they don't have to re-pick a role they already have.
+    """
+    if session.get("user_id"):
+        return redirect(url_for("home"))
+    return render_template("choose_role.html")
+
+
+@app.route("/role/<role>")
+def choose_role(role):
+    """Fighter/Gym go to a login page scoped to that role (with a register link).
+    Viewer needs no account at all, so it goes straight into the public site."""
+    if role == "viewer":
+        return redirect(url_for("home"))
+    if role in ("fighter", "gym"):
+        return redirect(url_for("login", role=role))
+    return redirect(url_for("index"))
 
 
 @app.route("/register")
@@ -55,30 +86,36 @@ def register_choose():
 @app.route("/register/fighter", methods=["GET", "POST"])
 def register_fighter():
     db = get_db()
+    gyms = db.execute("SELECT id, name FROM gyms ORDER BY name").fetchall()
+
+    def render_form():
+        # Pass the submitted values back so the user doesn't have to retype
+        # everything just because one field failed validation.
+        return render_template(
+            "register_fighter.html", gyms=gyms, weight_classes=WEIGHT_CLASSES,
+            form=request.form,
+        )
+
     if request.method == "POST":
-        username = request.form["username"].strip()
-        password = request.form["password"]
-        existing = db.execute("SELECT id FROM users WHERE username = ?", (username,)).fetchone()
-        if existing:
-            flash("That username is already taken.")
-            return render_template("register_fighter.html")
-
-        gyms = db.execute("SELECT id, name FROM gyms ORDER BY name").fetchall()
-
-        # Numeric fields come in as strings from the form and can be malformed
-        # (empty, non-numeric, etc.) — validate them before touching the database.
+        # Every field is validated through validation.py before anything touches
+        # the database. The first failure is reported and the form is redisplayed.
         try:
-            age = int(request.form["age"])
-            weight = float(request.form["weight"])
-            height = float(request.form["height"]) if request.form.get("height") else None
-            skill_level = int(request.form["skill_level"])
-        except (ValueError, KeyError):
-            flash("Age, weight, height, and skill level must be valid numbers.")
-            return render_template("register_fighter.html", gyms=gyms, weight_classes=WEIGHT_CLASSES)
+            username = validate_username(request.form.get("username"))
+            password = validate_password(request.form.get("password"))
+            name = validate_required_text(request.form.get("name"), "Name")
+            age = validate_age(request.form.get("age"))
+            weight = validate_weight(request.form.get("weight"))
+            height = validate_height(request.form.get("height"))
+            weight_class = validate_weight_class(request.form.get("weight_class"), WEIGHT_CLASSES)
+            skill_level = validate_skill_level(request.form.get("skill_level"))
+            contact = validate_contact(request.form.get("contact"))
+        except ValidationError as e:
+            flash(str(e))
+            return render_form()
 
-        if age < 16:
-            flash("Fighters must be at least 16 years old to register.")
-            return render_template("register_fighter.html", gyms=gyms, weight_classes=WEIGHT_CLASSES)
+        if db.execute("SELECT id FROM users WHERE username = ?", (username,)).fetchone():
+            flash("That username is already taken.")
+            return render_form()
 
         gym_id = request.form.get("gym_id") or None
         try:
@@ -93,90 +130,109 @@ def register_fighter():
                    (user_id, name, age, weight, height, weight_class, skill_level, wins, losses, photo, gym_id, contact)
                    VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, ?, ?, ?)""",
                 (
-                    user_id,
-                    request.form["name"],
-                    age,
-                    weight,
-                    height,
-                    request.form["weight_class"],
-                    skill_level,
-                    request.form.get("photo") or None,
-                    gym_id,
-                    request.form.get("contact"),
+                    user_id, name, age, weight, height, weight_class, skill_level,
+                    request.form.get("photo") or None, gym_id, contact,
                 ),
             )
             db.commit()
         except sqlite3.IntegrityError as e:
-            # e.g. the age CHECK(age >= 16) constraint at the database level,
-            # or a duplicate username slipping past the earlier check under
-            # concurrent requests.
+            # Second line of defence: the database's own CHECK/UNIQUE constraints
+            # (e.g. age >= 16) catch anything that slipped past validation, and a
+            # duplicate username registered concurrently.
             db.rollback()
             flash(f"Could not create account: {e}")
-            return render_template("register_fighter.html", gyms=gyms, weight_classes=WEIGHT_CLASSES)
+            return render_form()
 
         session["user_id"] = user_id
         session["role"] = "fighter"
         return redirect(url_for("home"))
 
-    gyms = db.execute("SELECT id, name FROM gyms ORDER BY name").fetchall()
-    return render_template("register_fighter.html", gyms=gyms, weight_classes=WEIGHT_CLASSES)
+    return render_template(
+        "register_fighter.html", gyms=gyms, weight_classes=WEIGHT_CLASSES, form={},
+    )
 
 
 @app.route("/register/gym", methods=["GET", "POST"])
 def register_gym():
     db = get_db()
+
+    def render_form():
+        return render_template("register_gym.html", form=request.form)
+
     if request.method == "POST":
-        username = request.form["username"].strip()
-        password = request.form["password"]
-        existing = db.execute("SELECT id FROM users WHERE username = ?", (username,)).fetchone()
-        if existing:
+        try:
+            username = validate_username(request.form.get("username"))
+            password = validate_password(request.form.get("password"))
+            name = validate_required_text(request.form.get("name"), "Gym name")
+            location = validate_required_text(request.form.get("location"), "Location")
+            contact = validate_contact(request.form.get("contact"))
+        except ValidationError as e:
+            flash(str(e))
+            return render_form()
+
+        if db.execute("SELECT id FROM users WHERE username = ?", (username,)).fetchone():
             flash("That username is already taken.")
-            return render_template("register_gym.html")
+            return render_form()
 
-        cur = db.execute(
-            "INSERT INTO users (username, password, role) VALUES (?, ?, 'gym')",
-            (username, generate_password_hash(password)),
-        )
-        user_id = cur.lastrowid
+        try:
+            cur = db.execute(
+                "INSERT INTO users (username, password, role) VALUES (?, ?, 'gym')",
+                (username, generate_password_hash(password)),
+            )
+            user_id = cur.lastrowid
 
-        db.execute(
-            "INSERT INTO gyms (user_id, name, location, ring_size, photo, contact) VALUES (?, ?, ?, ?, ?, ?)",
-            (
-                user_id,
-                request.form["name"],
-                request.form["location"],
-                request.form.get("ring_size"),
-                request.form.get("photo") or None,
-                request.form.get("contact"),
-            ),
-        )
-        db.commit()
+            db.execute(
+                "INSERT INTO gyms (user_id, name, location, ring_size, photo, contact) VALUES (?, ?, ?, ?, ?, ?)",
+                (
+                    user_id, name, location, request.form.get("ring_size"),
+                    request.form.get("photo") or None, contact,
+                ),
+            )
+            db.commit()
+        except sqlite3.IntegrityError as e:
+            db.rollback()
+            flash(f"Could not create account: {e}")
+            return render_form()
+
         session["user_id"] = user_id
         session["role"] = "gym"
         return redirect(url_for("home"))
 
-    return render_template("register_gym.html")
+    return render_template("register_gym.html", form={})
 
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    # ?role=fighter|gym lets the page show the right heading and point its
+    # "register instead" link at the matching signup form.
+    role = request.args.get("role") or request.form.get("role") or ""
+    if role not in ("fighter", "gym"):
+        role = ""
+
     if request.method == "POST":
         db = get_db()
         user = db.execute(
-            "SELECT * FROM users WHERE username = ?", (request.form["username"],)
+            "SELECT * FROM users WHERE username = ?", (request.form.get("username", "").strip(),)
         ).fetchone()
-        if user and check_password_hash(user["password"], request.form["password"]):
+        if user and check_password_hash(user["password"], request.form.get("password", "")):
+            # If they arrived via a role-specific login, make sure the account
+            # they signed into actually is that role.
+            if role and user["role"] != role:
+                flash(f"That account is not a {role} account.")
+                return render_template("login.html", role=role)
             session["user_id"] = user["id"]
             session["role"] = user["role"]
+            session.permanent = True
             return redirect(url_for("home"))
+        # Deliberately generic: never reveal whether the username exists.
         flash("Incorrect username or password.")
-    return render_template("login.html")
+    return render_template("login.html", role=role)
 
 
 @app.route("/logout")
 def logout():
     session.clear()
-    return redirect(url_for("home"))
+    return redirect(url_for("index"))
 
 
 # ---------- home / navigation ----------
@@ -314,8 +370,18 @@ def find_opponent_route():
     fight_date = None
 
     if request.method == "POST":
-        fight_date = request.form["fight_date"]
         preferred_location = request.form.get("preferred_location")
+        try:
+            fight_date = validate_fight_date(request.form.get("fight_date"))
+        except ValidationError as e:
+            flash(str(e))
+            gyms = db.execute("SELECT id, name FROM gyms ORDER BY name").fetchall()
+            return render_template(
+                "find_opponent.html", fighter=fighter, result=None, gyms=gyms,
+                fight_date=None, preferred_location=preferred_location, role=current_role(),
+                today=date.today().isoformat(),
+                max_date=(date.today() + timedelta(days=MAX_FIGHT_DAYS_AHEAD)).isoformat(),
+            )
 
         # candidates: everyone except me, not already pending/accepted with me on this date
         already_matched_ids = {
@@ -350,6 +416,8 @@ def find_opponent_route():
         fight_date=fight_date,
         preferred_location=preferred_location,
         role=current_role(),
+        today=date.today().isoformat(),
+        max_date=(date.today() + timedelta(days=MAX_FIGHT_DAYS_AHEAD)).isoformat(),
     )
 
 
@@ -369,6 +437,50 @@ def propose_match():
         flash("That match request was malformed — please try again.")
         return redirect(url_for("find_opponent_route"))
 
+    # The fight date is re-validated here, not just on the search form, because
+    # this route can be reached by submitting a form directly.
+    try:
+        fight_date = validate_fight_date(request.form.get("fight_date"))
+    except ValidationError as e:
+        flash(str(e))
+        return redirect(url_for("find_opponent_route"))
+
+    # A fighter cannot be matched against themselves.
+    if opponent_id == fighter["id"]:
+        flash("You cannot request a match against yourself.")
+        return redirect(url_for("find_opponent_route"))
+
+    opponent = db.execute("SELECT * FROM fighters WHERE id = ?", (opponent_id,)).fetchone()
+    if opponent is None:
+        flash("That fighter no longer exists.")
+        return redirect(url_for("find_opponent_route"))
+
+    if db.execute("SELECT id FROM gyms WHERE id = ?", (gym_id,)).fetchone() is None:
+        flash("That gym no longer exists.")
+        return redirect(url_for("find_opponent_route"))
+
+    # Weight class is enforced here, not merely preferred: the algorithm may
+    # suggest a nearby class when none are available, but the fighter must
+    # knowingly confirm it rather than it happening silently.
+    if opponent["weight_class"] != fighter["weight_class"]:
+        flash(
+            f"{opponent['name']} is in the {opponent['weight_class']} class, not yours "
+            f"({fighter['weight_class']}). Cross-class fights must be arranged with the gym directly."
+        )
+        return redirect(url_for("find_opponent_route"))
+
+    # Block a second pending/accepted request between the same two fighters on
+    # the same date.
+    duplicate = db.execute(
+        """SELECT id FROM matches
+           WHERE fight_date = ? AND status IN ('pending', 'accepted')
+             AND ((fighter1_id = ? AND fighter2_id = ?) OR (fighter1_id = ? AND fighter2_id = ?))""",
+        (fight_date, fighter["id"], opponent_id, opponent_id, fighter["id"]),
+    ).fetchone()
+    if duplicate:
+        flash("You already have a match request with that fighter on that date.")
+        return redirect(url_for("find_opponent_route"))
+
     try:
         db.execute(
             """INSERT INTO matches (fighter1_id, fighter2_id, gym_id, fight_date, preferred_location, weight_class, score, status)
@@ -377,7 +489,7 @@ def propose_match():
                 fighter["id"],
                 opponent_id,
                 gym_id,
-                request.form["fight_date"],
+                fight_date,
                 request.form.get("preferred_location"),
                 fighter["weight_class"],
                 score,

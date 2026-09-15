@@ -9,6 +9,9 @@ fitzen/
 ├── app.py              Main Flask application — every URL/page ("route") lives here:
 │                        registration, login, find-opponent, gym accept/decline,
 │                        calendar, directory, fighter profiles.
+├── validation.py        ALL input validation rules in one place (age, weight,
+│                        height, skill, username, password, contact, fight date).
+│                        No Flask, no database — so every rule is unit-testable.
 ├── matching.py          The matchmaking algorithm, on its own, with no Flask or
 │                        database code in it. Contains the Matchmaker class,
 │                        the weighted scoring formula, and the custom
@@ -22,6 +25,8 @@ fitzen/
 ├── seed.py               Optional — populates the database with 5 demo gyms
 │                        and 8 demo fighters so you have data to test with
 │                        immediately, and prints their usernames/passwords.
+├── test_validation.py     45 unit tests covering every validation rule,
+│                        including boundary values (age 15/16/80/81 etc).
 ├── test_matching.py       Unit tests for the algorithm ONLY — no Flask, no
 │                        database, just Python function calls checking the
 │                        scoring math and every edge case (tie, fallback, etc).
@@ -63,10 +68,11 @@ fitzen/
 ## Running the tests
 
 ```
+python3 test_validation.py
 python3 test_matching.py
 python3 test_app.py
 ```
-Both should end with "All ... tests passed."
+All three should end with "All ... tests passed."
 
 ## How the database works (short version)
 
