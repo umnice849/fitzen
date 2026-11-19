@@ -314,6 +314,11 @@ def calendar_view():
     today = date.today()
     year = request.args.get("year", type=int) or today.year
     month = request.args.get("month", type=int) or today.month
+    # Ignore impossible values in the address (e.g. month=13) instead of crashing.
+    if not 1 <= month <= 12:
+        month = today.month
+    if not 1900 <= year <= 2100:
+        year = today.year
 
     db = get_db()
     rows = db.execute(

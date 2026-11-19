@@ -26,6 +26,7 @@
     <p><strong>{{ opp['name'] }}</strong> &middot; Age {{ opp['age'] }} &middot; {{ opp['weight_class'] }} &middot; Skill {{ opp['skill_level'] }} &middot; {{ opp['wins'] }}-{{ opp['losses'] }} record</p>
     <p>Compatibility score: {{ "%.3f"|format(result.score) }} (lower = closer match)</p>
 
+    {% if opp['weight_class'] == fighter['weight_class'] %}
     <form method="POST" action="{{ url_for('propose_match') }}">
         <input type="hidden" name="opponent_id" value="{{ opp['id'] }}">
         <input type="hidden" name="fight_date" value="{{ fight_date }}">
@@ -39,6 +40,10 @@
         </div>
         <button class="btn" type="submit">Propose This Match</button>
     </form>
+    {% else %}
+    <p><em>No one in your weight class ({{ fighter['weight_class'] }}) is free on this date. This is the closest fighter
+    in a neighbouring class. Cross-class fights must be arranged with the gym directly, so there is no Propose button.</em></p>
+    {% endif %}
 
 {% elif result.result == 'tie' %}
     <h3>Two Fighters Tied — Choose One</h3>
@@ -46,6 +51,7 @@
     {% set opp = entry.fighter %}
     <div class="card">
         <p><strong>{{ opp['name'] }}</strong> &middot; Age {{ opp['age'] }} &middot; Skill {{ opp['skill_level'] }} &middot; {{ opp['wins'] }}-{{ opp['losses'] }} record &middot; score {{ "%.3f"|format(entry.score) }}</p>
+        {% if opp['weight_class'] == fighter['weight_class'] %}
         <form method="POST" action="{{ url_for('propose_match') }}">
             <input type="hidden" name="opponent_id" value="{{ opp['id'] }}">
             <input type="hidden" name="fight_date" value="{{ fight_date }}">
@@ -59,6 +65,9 @@
             </div>
             <button class="btn" type="submit">Propose Match with {{ opp['name'] }}</button>
         </form>
+        {% else %}
+        <p><em>{{ opp['name'] }} is in the {{ opp['weight_class'] }} class. Cross-class fights must be arranged with the gym directly.</em></p>
+        {% endif %}
     </div>
     {% endfor %}
 {% endif %}
